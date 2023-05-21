@@ -1,0 +1,126 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <algorithm>
+
+using namespace std;
+
+struct AVLNode {
+    int value;
+    int height;
+    AVLNode* left;
+    AVLNode* right;
+
+    AVLNode(int val) : value(val), height(1), left(NULL), right(NULL) {}
+};
+
+int getHeight(AVLNode* node) {
+    if (node == NULL)
+        return 0;
+    return node->height;
+}
+
+int getBalance(AVLNode* node) {
+    if (node == NULL)
+        return 0;
+    return getHeight(node->left) - getHeight(node->right);
+}
+
+AVLNode* rotateRight(AVLNode* y) {
+    AVLNode* x = y->left;
+    AVLNode* T2 = x->right;
+
+    x->right = y;
+    y->left = T2;
+
+    y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+    x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+
+    return x;
+}
+
+AVLNode* rotateLeft(AVLNode* x) {
+    AVLNode* y = x->right;
+    AVLNode* T2 = y->left;
+
+    y->left = x;
+    x->right = T2;
+
+    x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
+    y->height = max(getHeight(y->left), getHeight(y->right)) + 1;
+
+    return y;
+}
+
+AVLNode* insertNode(AVLNode* node, int value) {
+    if (node == NULL)
+        return new AVLNode(value);
+
+    if (value < node->value)
+        node->left = insertNode(node->left, value);
+    else if (value > node->value)
+        node->right = insertNode(node->right, value);
+    else
+        return node;
+
+    node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+
+    int balance = getBalance(node);
+
+    if (balance > 1 && value < node->left->value)
+        return rotateRight(node);
+
+    if (balance < -1 && value > node->right->value)
+        return rotateLeft(node);
+
+    if (balance > 1 && value > node->left->value) {
+        node->left = rotateLeft(node->left);
+        return rotateRight(node);
+    }
+
+    if (balance < -1 && value < node->right->value) {
+        node->right = rotateRight(node->right);
+        return rotateLeft(node);
+    }
+
+    return node;
+}
+
+int getAVLTreeHeight(vector<int>& dataset) {
+    AVLTree avlTree;
+    for (int value : dataset) {
+        avlTree.insert(value);
+    }
+    return getHeight(avlTree.root);
+}
+
+int main() {
+    srand(time(NULL));
+
+    int numSets = 10;
+    int setSize = pow(10, 6);
+
+    vector<vector<int>> datasets = generateRandomData(numSets, setSize);
+
+    vector<int> avlHeights;
+    vector<int> rbHeights;
+    vector<double> logNValues;
+    vector<double> logN1_45Values;
+
+    for (int i = 0; i < numSets; i++) {
+        int avlHeight = getAVLTreeHeight(datasets[i]);
+        
+        double logN = log2(setSize);
+        double logN1_45 = 1.45 * logN;
+
+        avlHeights.push_back(avlHeight);
+        logNValues.push_back(logN);
+        logN1_45Values.push_back(logN1_45);
+    }
+    return 0;
+}
+    
+   
+    
