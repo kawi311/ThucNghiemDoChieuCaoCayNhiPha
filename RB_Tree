@@ -1,0 +1,292 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+#include <algorithm>
+
+using namespace std;
+
+enum Color { RED, BLACK };
+
+struct RBNode {
+    int value;
+    bool color;
+    RBNode* left;
+    RBNode* right;
+    RBNode* parent;
+
+    RBNode(int val) : value(val), color(RED), left(NULL), right(NULL), parent(NULL) {}
+};
+
+class RBTree {
+private:
+    RBNode* root;
+
+    void rotateLeft(RBNode* node) {
+        RBNode* rightChild = node->right;
+        node->right = rightChild->left;
+
+        if (node->right != NULL)
+            node->right->parent = node;
+
+        rightChild->parent = node->parent;
+
+        if (node->parent == NULL)
+            root = rightChild;
+        else if (node == node->parent->left)
+            node->parent->left = rightChild;
+        else
+            node->parent->right = rightChild;
+
+        rightChild->left = node;
+        node->parent = rightChild;
+    }
+
+    void rotateRight(RBNode* node) {
+        RBNode* leftChild = node->left;
+        node->left = leftChild->right;
+
+        if (node->left != NULL)
+            node->left->parent = node;
+
+        leftChild->parent = node->parent;
+
+        if (node->parent == NULL)
+            root = leftChild;
+        else if (node == node->parent->left)
+            node->parent->left = leftChild;
+        else
+            node->parent->right = leftChild;
+
+        leftChild->right = node;
+        node->parent = leftChild;
+    }
+
+    void fixInsert(RBNode* node) {
+        RBNode* parent = NULL;
+        RBNode* grandParent = NULL;
+
+        while (node != root && node->color != BLACK && node->parent->color == RED) {
+            parent = node->parent;
+            grandParent = parent->parent;
+
+            if (parent == grandParent->left) {
+                RBNode* uncle = grandParent->right;
+
+                if (uncle != NULL && uncle->color == RED) {
+                    grandParent->color = RED;
+                    parent->color = BLACK;
+                    uncle->color = BLACK;
+                    node = grandParent;
+                }
+                else {
+                    if (node == parent->right) {
+                        rotateLeft(parent);
+                        node = parent;
+                        parent = node->parent;
+                    }
+
+                    rotateRight(grandParent);
+                    swap(parent->color, grandParent->color);
+                    node = parent;
+                }
+            }
+            else {
+                RBNode* uncle = grandParent->left;
+
+                if (uncle != NULL && uncle->color == RED) {
+                    grandParent->color = RED;
+                    parent->color = BLACK;
+                    uncle->color = BLACK;
+                    node = grandParent;
+                }
+                else {
+                    if (node == parent->left) {
+                        rotateRight(parent);
+                        node = parent;
+                        parent = node->parent;
+                    }
+
+                    rotateLeft(grandParent);
+                    swap(parent->color, grandParent->color);
+                    node = parent;
+                }
+            }
+        }
+
+        root->color = BLACK;
+    }
+
+    void fixDelete(RBNode* node) {
+        if (node == NULL)
+            return;
+
+        if (node == root) {
+            root = NULL;
+            return;
+        }
+
+        if (node->color == RED || (node->left != NULL && node->left->color == RED) || (node->right != NULL && node->right->color == RED)) {
+            RBNode* child = (node->left != NULL) ? node->left : node->right;
+
+            if (node == node->parent->left) {
+                node->parent->left = child;
+                if (child != NULL)
+                    child->parent = node->parent;
+                child->color = BLACK;
+                delete node;
+            }
+            else {
+                node->parent->right = child;
+                if (child != NULL)
+                    child->parent = node->parent;
+                child->color = BLACK;
+                delete node;
+            }
+        }
+        else {
+            RBNode* sibling = NULL;
+            RBNode* parent = NULL;
+            RBNode* ptr = node;
+            ptr->color = DOUBLE_BLACK;
+
+            while (ptr != root && ptr->color == DOUBLE_BLACK) {
+                parent = ptr->parent;
+                if (ptr == parent->left) {
+                    sibling = parent->right;
+                    if (sibling->color == RED) {
+                        sibling->color = BLACK;
+                        parent->color = RED;
+                        rotateLeft(parent);
+                    }
+                    else {
+                        if ((sibling->left == NULL || sibling->left->color == BLACK) && (sibling->right == NULL || sibling->right->color == BLACK)) {
+                            sibling->color = RED;
+                            if (parent->color == RED)
+                                parent->color = BLACK;
+                            else
+                                parent->color = DOUBLE_BLACK;
+                            ptr = parent;
+                        }
+                        else {
+                            if (sibling->right == NULL || sibling->right->color == BLACK) {
+                                sibling->left->color = BLACK;
+                                sibling->color = RED;
+                                rotateRight(sibling);
+                                sibling = parent->right;
+                            }
+                            sibling->color = parent->color;
+                            parent->color = BLACK;
+                            sibling->right->color = BLACK;
+                            rotateLeft(parent);
+                            break;
+                        }
+                    }
+                }
+                else {
+                    sibling = parent->left;
+                    if (sibling->color == RED) {
+                        sibling->color = BLACK;
+                        parent->color = RED;
+                        rotateRight(parent);
+                    }
+                    else {
+                        if ((sibling->left == NULL || sibling->left->color == BLACK) && (sibling->right == NULL || sibling->right->color == BLACK)) {
+                            sibling->color = RED;
+                            if (parent->color == RED)
+                                parent->color = BLACK;
+                            else
+                                parent->color = DOUBLE_BLACK;
+                            ptr = parent;
+                        }
+                        else {
+                            if (sibling->left == NULL || sibling->left->color == BLACK) {
+                                sibling->right->color = BLACK;
+                                sibling->color = RED;
+                                rotateLeft(sibling);
+                                sibling = parent->left;
+                            }
+                            sibling->color = parent->color;
+                            parent->color = BLACK;
+                            sibling->left->color = BLACK;
+                            rotateRight(parent);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (node == node->parent->left)
+                node->parent->left = NULL;
+            else
+                node->parent->right = NULL;
+            delete node;
+            root->color = BLACK;
+        }
+    }
+
+    void inorderTraversalHelper(RBNode* node, vector<int>& values) {
+        if (node == NULL)
+            return;
+
+        inorderTraversalHelper(node->left, values);
+        values.push_back(node->value);
+        inorderTraversalHelper(node->right, values);
+    }
+
+public:
+    RBTree() : root(NULL) {}
+
+    void insert(int value) {
+        RBNode* newNode = new RBNode(value);
+        root = insertNode(root, newNode);
+        fixInsert(newNode);
+    }
+
+    void remove(int value) {
+        RBNode* node = searchNode(root, value);
+        if (node == NULL)
+            return;
+
+        fixDelete(node);
+    }
+
+    vector<int> inorderTraversal() {
+        vector<int> values;
+        inorderTraversalHelper(root, values);
+        return values;
+    }
+};
+int getRBTreeHeight(vector<int>& dataset) {
+    RBTree rbTree;
+    for (int value : dataset) {
+        rbTree.insert(value);
+    }
+    return rbTree.getHeight();
+}
+
+int main() {
+    srand(time(NULL));
+
+    int numSets = 10;
+    int setSize = pow(10, 6);
+
+    vector<vector<int>> datasets = generateRandomData(numSets, setSize);
+
+    vector<int> rbHeights;
+    vector<double> logNValues;
+    vector<double> logN1_45Values;
+
+    for (int i = 0; i < numSets; i++) {
+      
+        int rbHeight = getRBTreeHeight(datasets[i]);
+
+        double logN = log2(setSize);
+        double logN1_45 = 1.45 * logN;
+        rbHeights.push_back(rbHeight);
+        logNValues.push_back(logN);
+        logN1_45Values.push_back(logN1_45);
+    }
+    return 0;
+}
