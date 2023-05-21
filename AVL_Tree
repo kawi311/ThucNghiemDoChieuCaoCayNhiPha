@@ -105,7 +105,6 @@ int main() {
     vector<vector<int>> datasets = generateRandomData(numSets, setSize);
 
     vector<int> avlHeights;
-    vector<int> rbHeights;
     vector<double> logNValues;
     vector<double> logN1_45Values;
 
@@ -114,7 +113,6 @@ int main() {
         
         double logN = log2(setSize);
         double logN1_45 = 1.45 * logN;
-
         avlHeights.push_back(avlHeight);
         logNValues.push_back(logN);
         logN1_45Values.push_back(logN1_45);
